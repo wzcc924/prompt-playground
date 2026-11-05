@@ -4,6 +4,13 @@
   "version": "0.1.0",
   "type": "module",
   "description": "多模型 Prompt 调试与对比工具 —— 同一个 prompt 并排流式对比多个模型的输出、延迟与成本",
+  "license": "MIT",
+  "author": "wzcc924",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wzcc924/prompt-playground.git"
+  },
+  "homepage": "https://prompt-playground.app.workbuddy.host/?sharecode=N5OFMQNTIY",
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",

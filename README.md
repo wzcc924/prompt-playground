@@ -10,7 +10,8 @@
 > 同一个 prompt，并排看多个模型怎么答。实时对比输出质量、首字延迟与成本。
 
 **[▶ 在线体验](https://prompt-playground.app.workbuddy.host/?sharecode=N5OFMQNTIY)** ·
-**[三栏直接看效果](https://prompt-playground.app.workbuddy.host/?sharecode=N5OFMQNTIY&demo=1)** ——
+**[三栏直接看效果](https://prompt-playground.app.workbuddy.host/?sharecode=N5OFMQNTIY&demo=1)** ·
+**[源码](https://github.com/wzcc924/prompt-playground)** ——
 不用 API Key，打开就是流式输出。
 
 一个纯前端的多模型 Prompt 调试台：写一次 prompt 同时发给 1~3 个模型，逐字流式并排对比，
