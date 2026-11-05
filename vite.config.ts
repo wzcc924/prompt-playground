@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
@@ -13,5 +14,16 @@ export default defineConfig({
   },
   server: {
     port: 5173
+  },
+  test: {
+    // 只测纯逻辑（SSE 解析 / 块切分 / token 估算），不需要 jsdom
+    environment: 'node',
+    include: ['src/**/*.test.ts'],
+    coverage: {
+      provider: 'v8',
+      include: ['src/lib/**/*.ts'],
+      exclude: ['src/lib/db.ts', 'src/lib/mock.ts', 'src/lib/__tests__/**'],
+      reporter: ['text', 'html']
+    }
   }
 })
