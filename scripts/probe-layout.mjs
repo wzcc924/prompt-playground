@@ -3,8 +3,9 @@
  * 用法：以 --remote-debugging-port=9223 启动浏览器并打开页面后运行本脚本。
  */
 const PORT = process.env.CDP_PORT ?? '9223'
+const MATCH = process.env.MATCH ?? '' // 用 URL_MATCH 之类缩小范围，默认取第一个页面
 const targets = await (await fetch(`http://127.0.0.1:${PORT}/json`)).json()
-const page = targets.find((t) => t.type === 'page' && t.url.includes('workbuddy.host'))
+const page = targets.find((t) => t.type === 'page' && t.url.includes(MATCH))
 if (!page) {
   console.error('未找到目标页面')
   process.exit(1)

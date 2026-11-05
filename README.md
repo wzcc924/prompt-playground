@@ -1,5 +1,12 @@
 # Prompt Playground
 
+<p>
+  <img alt="Vue" src="https://img.shields.io/badge/Vue-3.5-42b883?logo=vuedotjs&logoColor=white" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.7-3178c6?logo=typescript&logoColor=white" />
+  <img alt="Vite" src="https://img.shields.io/badge/Vite-6-646cff?logo=vite&logoColor=white" />
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-3da639" />
+</p>
+
 > 同一个 prompt，并排看多个模型怎么答。实时对比输出质量、首字延迟与成本。
 
 **[▶ 在线体验](https://prompt-playground.app.workbuddy.host/?sharecode=N5OFMQNTIY)** ·
@@ -11,8 +18,7 @@
 内置 Prompt 模板库、`{{变量}}` 占位符、会话本地持久化，以及一个**不需要 API Key 的 Mock 引擎**——
 任何人点开链接就能在 3 秒内看到完整的流式效果。
 
-<!-- TODO: 换成 6~8 秒的 GIF 放这里：写 prompt → 三栏同时逐字输出 → 指标表出现差异 -->
-![screenshot](./docs/screenshot.png)
+![演示：写 prompt → 三栏同时逐字输出 → 指标表出现差异](./docs/demo.gif)
 
 ## 快速开始
 
@@ -162,8 +168,26 @@ src/
     ├── MarkdownBlocks.vue  块级渲染 + 虚拟滚动接入
     └── ...                 侧边栏 / 指标表 / 输入区 / 设置
 scripts/
-└── check-virtual-scroll.mjs  CDP 真实滚动验证脚本
+├── check-virtual-scroll.mjs  CDP 真实滚动验证（虚拟列表是否真的换块、scrollHeight 是否漂移）
+├── probe-layout.mjs          CDP 设备模拟 + 遍历元素找横向溢出（窄屏回归用）
+└── record-demo.mjs           录 README 演示 GIF：screencast 抓帧 → pngjs 解码 → gifenc 编码
 ```
+
+### 自己重录演示 GIF
+
+不需要 ffmpeg：
+
+```bash
+npm run dev                                          # 5173
+chrome --headless=new --remote-debugging-port=9224 \
+       --window-size=1200,740                        # 另开一个终端
+node scripts/record-demo.mjs docs/demo.gif
+```
+
+`record-demo.mjs` 会清空站点存储（避免历史会话在侧边栏堆积）、模拟逐字输入、
+点发送，然后一直录到三栏都结束才停，最后按目标播放时长折算帧间隔。
+录之前别用 `Emulation.setDeviceMetricsOverride` 放大视口——headless 的渲染面受物理窗口限制，
+放大视口只会让右侧被裁掉，必须让 `--window-size` 和布局视口一致。
 
 ## 已知限制 / TODO
 
