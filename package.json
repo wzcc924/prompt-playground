@@ -1,0 +1,28 @@
+{
+  "name": "prompt-playground",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "多模型 Prompt 调试与对比工具 —— 同一个 prompt 并排流式对比多个模型的输出、延迟与成本",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "type-check": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "dexie": "^4.0.11",
+    "highlight.js": "^11.11.1",
+    "markdown-it": "^14.1.0",
+    "pinia": "^3.0.1",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@types/markdown-it": "^14.1.2",
+    "@types/node": "^26.6.6",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "typescript": "~5.7.3",
+    "vite": "^6.1.0",
+    "vue-tsc": "^2.2.0"
+  }
+}
