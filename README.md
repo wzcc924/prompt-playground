@@ -5,6 +5,9 @@
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.7-3178c6?logo=typescript&logoColor=white" />
   <img alt="Vite" src="https://img.shields.io/badge/Vite-6-646cff?logo=vite&logoColor=white" />
   <img alt="License" src="https://img.shields.io/badge/License-MIT-3da639" />
+  <a href="https://github.com/wzcc924/prompt-playground/actions/workflows/test.yml">
+    <img alt="test" src="https://github.com/wzcc924/prompt-playground/actions/workflows/test.yml/badge.svg" />
+  </a>
 </p>
 
 > 同一个 prompt，并排看多个模型怎么答。实时对比输出质量、首字延迟与成本。
@@ -37,6 +40,7 @@ npm run dev        # http://localhost:5173
 ```bash
 npm run build      # 产物在 dist/，相对路径，可直接静态托管
 npm run preview
+npm test           # 61 个单元测试
 ```
 
 ## 部署
@@ -146,6 +150,42 @@ npm run build && npx serve dist   # 本地验证生产构建
 - **highlight.js 按需注册语言**：只注册 8 种常用语言，避开完整版 1MB+ 的体积
 - **Mock 失败自动回落**：真实接口报错时不影响演示
 
+## 测试
+
+**纯函数优先。** SSE 的解析逻辑原本和 `fetch` 写在一起，没法单测，所以拆出了
+`createSseParser()`（纯增量解析）和 `createTextStreamDecoder()`（多字节解码）。
+这样「一行 JSON 被 TCP 分片切开」「中文 3 字节正好落在 chunk 边界」这类最难手工复现的边界，
+才能写成断言而不是靠接一个真实接口去赌。
+
+```bash
+npm test               # 61 个用例，约 0.6s
+npm run test:coverage  # 覆盖率报告，HTML 在 coverage/
+```
+
+| 测试文件 | 用例 | 覆盖的关键行为 |
+|---|---|---|
+| `sse.test.ts` | 11 | 分片行拼接、`[DONE]` 终止、心跳/空行、非法 JSON 不抛、flush 末行、逐字节中文解码 |
+| `sse-stream.test.ts` | 6 | 假 fetch + ReadableStream 跑通 `streamChat` 全链路、请求体协议、HTTP 错误、abort 传递 |
+| `blocks.test.ts` | 14 | 空行分块、围栏保护、未闭合围栏、列表/引用合并、拼回去不丢行 |
+| `markdown.test.ts` | 11 | XSS 转义、高亮与语言别名、未闭合围栏、代码块嵌套结构 |
+| `metrics.test.ts` | 19 | token 估算分段、成本换算、毫秒/秒切换、除零保护 |
+
+`src/lib` 纯逻辑模块的覆盖率：
+
+```
+All files    |  95.77 % Stmts |  91.66 % Branch |  94.73 % Funcs |  100 % Lines
+```
+
+**测试有没有用，得看它能不能抓到 bug。** 做了一轮变异测试：往源码注入 3 处真实写代码时可能犯的错
+（去掉「半行留在 buffer」的逻辑、不再识别代码围栏、CJK 系数 1.1 改成 1.0），**7 个用例立刻变红**。
+
+写测试时还顺手抓到一个线上一直在犯的错：`markdown-it` 的 `highlight` 返回值只有以 `<pre` 开头才会被原样输出，
+否则会被塞进 `<pre><code>`，于是代码块实际渲染成 `<pre><code><div class="code-wrap"><pre>` 这种非法嵌套
+（`div` 不能出现在 `code` 里，浏览器会自行纠错，样式随之偏移）。改成接管 `fence` 渲染规则后输出干净，
+`markdown.test.ts` 里留了一条断言防回归。
+
+GitHub Actions 会在每次 push 时跑 `npm ci` → 测试 → 覆盖率 → 类型检查与构建。
+
 ## 目录结构
 
 ```
@@ -157,7 +197,8 @@ src/
 │   ├── markdown.ts         markdown-it + 按需高亮
 │   ├── blocks.ts           Markdown 顶层块切分
 │   ├── metrics.ts          token 估算与成本计算
-│   └── db.ts               Dexie schema + 种子模板
+│   ├── db.ts               Dexie schema + 种子模板
+│   └── __tests__/          5 个测试文件，61 个用例
 ├── stores/
 │   ├── playground.ts       并发流编排、100ms 批量提交、会话持久化
 │   └── settings.ts         接口配置与主题
@@ -172,6 +213,7 @@ scripts/
 ├── check-virtual-scroll.mjs  CDP 真实滚动验证（虚拟列表是否真的换块、scrollHeight 是否漂移）
 ├── probe-layout.mjs          CDP 设备模拟 + 遍历元素找横向溢出（窄屏回归用）
 └── record-demo.mjs           录 README 演示 GIF：screencast 抓帧 → pngjs 解码 → gifenc 编码
+.github/workflows/test.yml    CI：测试 + 覆盖率 + 类型检查
 ```
 
 ### 自己重录演示 GIF
@@ -194,10 +236,11 @@ node scripts/record-demo.mjs docs/demo.gif
 
 - [x] ~~长会话虚拟滚动~~ —— 块级虚拟列表已接入，见上文
 - [x] ~~Markdown 增量渲染~~ —— 块切分后只重解析最后一块
+- [x] ~~单元测试~~ —— 5 个文件 61 个用例，纯逻辑模块行覆盖 100%
 - [ ] 把 Markdown 解析搬进 Web Worker：块切分已经把范围缩小到最后一块，但长代码块仍是同步解析
 - [ ] 模板的版本历史与回滚
-- [ ] 块切分的边界场景：松散列表、HTML 块、脚注仍需补用例
-- [ ] 单元测试（SSE 解析器、块切分、token 估算都是纯函数，优先补这三个）
+- [ ] 块切分还没覆盖的场景：HTML 块（`<details>`）、脚注、表格与列表混排
+- [ ] 只测了 `src/lib` 的纯函数；`stores/playground.ts` 的并发编排（中断/重试/多路隔离）还没测，需要引入 jsdom
 - [ ] 并发数超过 3 时的列宽自适应
 
 ## License
