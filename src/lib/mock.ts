@@ -14,26 +14,30 @@ export interface StreamMockOptions {
   prompt: string
   signal: AbortSignal
   onDelta: (text: string) => void
+  /** 长文档压测：一次吐一大段，用来验证虚拟滚动 */
+  long?: boolean
 }
 
 export async function streamMock(o: StreamMockOptions): Promise<void> {
-  const { model, prompt, signal, onDelta } = o
+  const { model, prompt, signal, onDelta, long } = o
 
   // 模拟网络 + 首 token 延迟
   await sleep(160 + Math.random() * 320)
   throwIfAborted(signal)
 
-  const text = buildReply(model, prompt)
+  const text = buildReply(model, prompt, Boolean(long))
   const perChar = 1000 / model.mockSpeed
   let i = 0
 
   while (i < text.length) {
     throwIfAborted(signal)
-    const step = 1 + Math.floor(Math.random() * 3)
+    const step = long
+      ? 18 + Math.floor(Math.random() * 24)
+      : 1 + Math.floor(Math.random() * 3)
     onDelta(text.slice(i, i + step))
     i += step
     // 轻微的节奏抖动，比匀速更像真实模型
-    await sleep(perChar * (0.6 + Math.random() * 0.9))
+    await sleep(long ? 6 + Math.random() * 9 : perChar * (0.6 + Math.random() * 0.9))
   }
 }
 
@@ -51,10 +55,25 @@ function topicOf(prompt: string): string {
   return cleaned.length > 26 ? `${cleaned.slice(0, 26)}…` : cleaned
 }
 
-function buildReply(model: ModelConfig, prompt: string): string {
+function buildReply(model: ModelConfig, prompt: string, long: boolean): string {
   const topic = topicOf(prompt)
+  const body = bodyFor(model.tone, topic)
+  if (!long) return body
 
-  if (model.tone === 'concise') {
+  const parts = [
+    `# ${topic}`,
+    '',
+    '> 长文档压测模式：块数超过阈值后会切到虚拟滚动，只有视口内的块参与渲染。',
+    ''
+  ]
+  for (let i = 1; i <= 12; i++) {
+    parts.push(`## 第 ${i} 段`, '', body, '')
+  }
+  return parts.join('\n')
+}
+
+function bodyFor(tone: ModelConfig['tone'], topic: string): string {
+  if (tone === 'concise') {
     return [
       `针对「${topic}」，我的结论是：**先跑通最小闭环，再谈优化**。`,
       '',
@@ -68,10 +87,8 @@ function buildReply(model: ModelConfig, prompt: string): string {
     ].join('\n')
   }
 
-  if (model.tone === 'structured') {
+  if (tone === 'structured') {
     return [
-      `## ${topic}`,
-      '',
       '### 1. 问题拆解',
       '',
       '- **输入**：用户意图 + 上下文约束',
@@ -109,11 +126,11 @@ function buildReply(model: ModelConfig, prompt: string): string {
   return [
     `关于「${topic}」，我分三层来说。`,
     '',
-    '## 一、先判断这件事值不值得做',
+    '### 一、先判断这件事值不值得做',
     '',
     '大多数需求真正的问题不在"怎么做"，而在"要不要做"。判断标准通常是两个：**它是否频繁发生**，以及**它出错时代价有多大**。两者都低的场景，简单方案就够了。',
     '',
-    '## 二、怎么做',
+    '### 二、怎么做',
     '',
     '1. **收敛范围** —— 先把 20% 的核心路径做到可用，剩下的功能等真实反馈；',
     '2. **建立度量** —— 至少要有一个数字能说明改动前后谁更好，否则讨论会变成观点之争；',
@@ -125,7 +142,7 @@ function buildReply(model: ModelConfig, prompt: string): string {
     'npm run build && npm run preview',
     '```',
     '',
-    '## 三、容易踩的坑',
+    '### 三、容易踩的坑',
     '',
     '- 过早抽象：只出现过一次的模式不需要抽成通用能力；',
     '- 忽略边界：空输入、超长输入、并发请求是最常见的三个事故源；',

@@ -907,6 +907,33 @@ textarea {
   margin-top: 0;
 }
 
+/* 块级切分：块间距用 padding 撑开而不是 margin ——
+   margin 不计入元素高度，虚拟列表做前缀和累加时会一点点漂移 */
+.md-block {
+  display: flow-root;
+  padding-bottom: 0.6em;
+}
+
+.md-block:last-child {
+  padding-bottom: 0;
+}
+
+.md-block.is-heading {
+  padding-top: 0.55em;
+}
+
+.md-block:first-child.is-heading {
+  padding-top: 0;
+}
+
+.md-block > .markdown > *:first-child {
+  margin-top: 0;
+}
+
+.md-block > .markdown > *:last-child {
+  margin-bottom: 0;
+}
+
 .markdown h1,
 .markdown h2,
 .markdown h3,

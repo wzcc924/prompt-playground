@@ -62,7 +62,9 @@ onMounted(() => {
   }
   const preset = params.get('q')
   if (preset) store.prompt = preset
-  if (params.get('demo') === '1' && !store.columns.length) {
+  const demo = params.get('demo')
+  if ((demo === '1' || demo === 'long') && !store.columns.length) {
+    store.demoLong = demo === 'long'
     store.prompt = examples[0].text
     void store.send()
   }

@@ -72,6 +72,45 @@ npm run preview
 `src/composables/useAutoScroll.ts` 维护一个 `pinned` 状态：只有用户本来就在底部 48px 内才自动跟随，
 一旦检测到上滑就解除跟随。
 
+### 长文档：块级虚拟滚动
+
+一份 12 段的长回答有 170+ 个 Markdown 块，全量渲染时每 100ms 一次的提交会让主线程持续重排。
+做法（`src/lib/blocks.ts` + `src/composables/useVirtualList.ts`）：
+
+- 按空行把文档切成「顶层块」，切分时跳过代码围栏，并把被空行拆散的列表 / 引用块合并回去
+  （否则 `1. a\n\n2. b` 会渲染成两个都从 1 开始的列表）
+- 块数超过 40 才启用虚拟滚动，小文档全量渲染 —— 短文档上虚拟化的测量开销大于收益
+- 未测量的块用估算高度，前缀和 + 二分查找定位可视区间，上下各留 3 块 overscan
+
+流式场景特有的三个坑，都在代码注释里标了：
+
+1. **元素卸载时 `ResizeObserver` 会回调一次 0 高度**，直接把已测的真实值覆盖成 0，前缀和瞬间崩塌；
+2. **`contentRect.height` 不含 padding**，而块间距是用 padding 撑的（margin 不计入元素高度，
+   累加前缀和会一点点漂移）—— 所以测量统一走 `getBoundingClientRect()`；
+3. **贴底时不能只依赖 scrollTop**：要滚到底就得先渲染末尾的块，渲染末尾的块又依赖「已经滚到底」，
+   是个死循环。贴底时改成从「总高度 − 视口高度」反推可视区间。
+
+另外，视口上方的块变高时会同步补偿 `scrollTop`，否则用户会看到正在读的内容被顶下去。
+
+效果：170 块的文档，DOM 里只留 8~10 块；滚动过程中 `scrollHeight` 稳定在 9220px 不漂移。
+
+![long document](./docs/screenshot-long.png)
+
+用 CDP 做过真实交互验证（`npm run check:scroll`，需要先以 `--remote-debugging-port=9222` 启动浏览器）：
+
+```
+滚到底部时： {"blocks":23,"scrollTop":8925,"scrollHeight":9220}
+滚到中段时： {"blocks":29,"scrollTop":4610,"scrollHeight":9220}
+```
+
+滚动前后渲染的块数都维持在 20 多，`scrollHeight` 不变 —— 说明视口外的块确实被摘掉、偏移量也没有累积漂移。
+
+### 增量渲染
+
+顺带解决了另一个问题：块切分之后，流式增长只会影响**最后一块**，
+前面的块内容不变，`computed` 直接命中缓存，不会重新解析。
+真正的解析量从「整篇 × 每秒 10 次」降到「最后一块 × 每秒 10 次」。
+
 ### 其他工程细节
 
 - **AbortController 按列隔离**：每路流一个控制器，组件卸载 / 用户点中断时全部 abort，不会留下野流
@@ -88,23 +127,32 @@ src/
 │   ├── sse.ts              SSE 流式请求 + 增量解析
 │   ├── mock.ts             Mock 流引擎
 │   ├── markdown.ts         markdown-it + 按需高亮
+│   ├── blocks.ts           Markdown 顶层块切分
 │   ├── metrics.ts          token 估算与成本计算
 │   └── db.ts               Dexie schema + 种子模板
 ├── stores/
 │   ├── playground.ts       并发流编排、100ms 批量提交、会话持久化
 │   └── settings.ts         接口配置与主题
 ├── composables/
-│   └── useAutoScroll.ts    贴底跟随 + 用户上滑解除跟随
-└── components/             侧边栏 / 多栏输出 / 指标表 / 输入区 / 设置
+│   ├── useAutoScroll.ts    贴底跟随 + 用户上滑解除跟随
+│   └── useVirtualList.ts   变高虚拟列表（二分查找 + 测高 + 偏移补偿）
+└── components/
+    ├── OutputColumn.vue    单栏：列头状态 / 滚动容器 / 指标脚注
+    ├── MarkdownBlocks.vue  块级渲染 + 虚拟滚动接入
+    └── ...                 侧边栏 / 指标表 / 输入区 / 设置
+scripts/
+└── check-virtual-scroll.mjs  CDP 真实滚动验证脚本
 ```
 
 ## 已知限制 / TODO
 
-- [ ] 长会话还没上虚拟滚动（现在靠 100ms 节流扛住，万条消息会卡）
-- [ ] Markdown 增量渲染：目前每次全量重解析最后一个块之前的所有内容
+- [x] ~~长会话虚拟滚动~~ —— 块级虚拟列表已接入，见上文
+- [x] ~~Markdown 增量渲染~~ —— 块切分后只重解析最后一块
+- [ ] 把 Markdown 解析搬进 Web Worker：块切分已经把范围缩小到最后一块，但长代码块仍是同步解析
 - [ ] 模板的版本历史与回滚
+- [ ] 块切分的边界场景：松散列表、HTML 块、脚注仍需补用例
+- [ ] 单元测试（SSE 解析器、块切分、token 估算都是纯函数，优先补这三个）
 - [ ] 并发数超过 3 时的列宽自适应
-- [ ] 单元测试（SSE 解析器与 token 估算是纯函数，优先补这两个）
 
 ## License
 

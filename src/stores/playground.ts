@@ -29,6 +29,8 @@ export const usePlayground = defineStore('playground', () => {
   const sessions = ref<SessionRecord[]>([])
   const activeTemplateId = ref<string | null>(null)
   const notice = ref('')
+  /** 仅供 ?demo=long 使用：让 Mock 一次吐一份长文档，用来演示虚拟滚动 */
+  const demoLong = ref(false)
 
   /** AbortController 不放进响应式状态：它不需要触发视图更新，也没必要被代理 */
   const controllers = new Map<string, AbortController>()
@@ -139,7 +141,13 @@ export const usePlayground = defineStore('playground', () => {
 
     try {
       if (settings.effectiveMock) {
-        await streamMock({ model, prompt: finalPrompt, signal: controller.signal, onDelta })
+        await streamMock({
+          model,
+          prompt: finalPrompt,
+          signal: controller.signal,
+          onDelta,
+          long: demoLong.value
+        })
       } else {
         await streamChat({
           baseUrl: settings.baseUrl,
@@ -339,6 +347,7 @@ export const usePlayground = defineStore('playground', () => {
     sessions,
     activeTemplateId,
     notice,
+    demoLong,
     isStreaming,
     hasResult,
     title,

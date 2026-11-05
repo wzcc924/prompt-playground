@@ -4,7 +4,7 @@ import type { ColumnState } from '@/types'
 import { getModel } from '@/config/models'
 import { formatCost } from '@/lib/metrics'
 import { useAutoScroll } from '@/composables/useAutoScroll'
-import MarkdownView from './MarkdownView.vue'
+import MarkdownBlocks from './MarkdownBlocks.vue'
 
 const props = defineProps<{ column: ColumnState }>()
 const emit = defineEmits<{ retry: [modelId: string] }>()
@@ -65,7 +65,12 @@ async function copy() {
       </div>
       <template v-else>
         <div v-if="column.error" class="error-box">{{ column.error }}</div>
-        <MarkdownView v-if="column.content" :source="column.content" />
+        <MarkdownBlocks
+          v-if="column.content"
+          :source="column.content"
+          :scroller="bodyEl"
+          :pinned="pinned"
+        />
       </template>
     </div>
 
