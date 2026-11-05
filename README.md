@@ -2,6 +2,10 @@
 
 > 同一个 prompt，并排看多个模型怎么答。实时对比输出质量、首字延迟与成本。
 
+**[▶ 在线体验](https://prompt-playground.app.workbuddy.host/?sharecode=N5OFMQNTIY)** ·
+**[三栏直接看效果](https://prompt-playground.app.workbuddy.host/?sharecode=N5OFMQNTIY&demo=1)** ——
+不用 API Key，打开就是流式输出。
+
 一个纯前端的多模型 Prompt 调试台：写一次 prompt 同时发给 1~3 个模型，逐字流式并排对比，
 并把每次对比的首字延迟（TTFT）、总耗时、输出 token 与估算成本记录成表格。
 内置 Prompt 模板库、`{{变量}}` 占位符、会话本地持久化，以及一个**不需要 API Key 的 Mock 引擎**——
@@ -27,6 +31,18 @@ npm run dev        # http://localhost:5173
 npm run build      # 产物在 dist/，相对路径，可直接静态托管
 npm run preview
 ```
+
+## 部署
+
+纯静态产物，`dist/` 直接丢到任意静态托管即可（Vercel / Netlify / Nginx / OSS）。
+没有后端、没有环境变量、没有运行时依赖——这也是当初刻意只做纯前端的原因：
+**任何一次部署都是一次 `vite build`，不存在"线上挂了因为是接口方的问题"**。
+
+```bash
+npm run build && npx serve dist   # 本地验证生产构建
+```
+
+线上版本：<https://prompt-playground.app.workbuddy.host/?sharecode=N5OFMQNTIY>
 
 ## 功能
 
