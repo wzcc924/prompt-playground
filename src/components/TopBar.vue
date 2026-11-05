@@ -22,7 +22,7 @@ const modeLabel = computed(() => (settings.effectiveMock ? 'Mock 引擎' : '真�
       {{ modeLabel }}
     </span>
 
-    <button class="btn" :disabled="!store.hasResult" @click="$emit('export')">导出 MD</button>
+    <button class="btn btn-export" :disabled="!store.hasResult" @click="$emit('export')">导出 MD</button>
     <button class="btn" title="切换明暗主题" @click="settings.toggleTheme()">
       {{ settings.theme === 'dark' ? '浅色' : '深色' }}
     </button>

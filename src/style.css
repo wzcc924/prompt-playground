@@ -1142,3 +1142,46 @@ textarea {
     min-height: 320px;
   }
 }
+
+/* ---------- 响应式：手机 ---------- */
+@media (max-width: 640px) {
+  /* 顶栏在 390px 下会溢出：按钮是 min-content 宽度，先把间距和留白压掉，
+     标题让位（给 min-width 保证不被挤成 0，截断显示省略号） */
+  .topbar {
+    gap: 6px;
+    padding: 0 10px;
+    height: 50px;
+  }
+  .topbar .model-name {
+    min-width: 52px;
+  }
+  .topbar .btn {
+    height: 28px;
+    padding: 0 8px;
+    font-size: 12px;
+  }
+  .badge {
+    padding: 2px 7px;
+    font-size: 11px;
+  }
+  /* 手机上「导出 MD」价值最低，让位给真正要点的操作 */
+  .topbar .btn-export {
+    display: none;
+  }
+
+  /* 指标表横向能滚，但先压一下内边距，尽量一屏放得下 */
+  .metrics-table th,
+  .metrics-table td {
+    padding: 6px 7px;
+    font-size: 11px;
+  }
+  .metrics-table .row-model {
+    gap: 5px;
+  }
+  /* 手机上「速度」不是决策依据，去掉它让成本列不用横向滚动才看得到 */
+  .metrics-table th:nth-child(5),
+  .metrics-table td:nth-child(5) {
+    display: none;
+  }
+}
+

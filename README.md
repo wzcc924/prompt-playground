@@ -54,6 +54,11 @@ npm run build && npx serve dist   # 本地验证生产构建
 - **中断 / 导出**：随时中断接收，一键导出 Markdown 对比报告
 - **Mock 引擎**：模拟首字延迟与逐字输出，无 Key 可完整演示
 - **明暗主题**：全部走 CSS 设计令牌，切换只改一层变量
+- **响应式**：手机端自动切单列（招聘方大概率是拿手机点链接的）
+
+<p align="center">
+  <img src="./docs/screenshot-mobile.png" width="300" alt="手机端" />
+</p>
 
 ## 技术要点
 
